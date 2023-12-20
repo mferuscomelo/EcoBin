@@ -1,0 +1,3 @@
+[submodule "EcoBin-WebApp"]
+	path = EcoBin-WebApp
+	url = https://github.com/mferuscomelo/EcoBin-WebApp
