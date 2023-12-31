@@ -18,7 +18,7 @@ This project has been divided up into multiple parts:
 
 ### System Architecture
 
-![EcoBin system architecture](images/system-architecture.png)
+![EcoBin system architecture](documents/images/system-architecture.png)
 
 ### Try it yourself!
 
