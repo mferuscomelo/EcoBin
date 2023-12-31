@@ -8,7 +8,21 @@ EcoBin can also help optimize garbage pickup routes by using the data from the s
 
 My solution would provide a low-cost alternative to expensive smart bins and the opportunity to retrofit existing bins and optimize the garbage pickup routes.
 
-## Credentials
+## Documentation
+
+This project has been divided up into multiple parts:
+
+- [Web Application](/EcoBin-WebApp/)
+- [AVR Iot Cellular Mini]()
+- [ESP32-Cam]()
+
+### System Architecture
+
+![EcoBin system architecture](images/system-architecture.png)
+
+### Try it yourself!
+
+To try the application out for yourself, visit the [EcoBin website](https://ecobin-11d60.web.app/) and use the following credentials to log in:
 
 **Admin:** \
 Username: `admin@ecobin.com` \
@@ -36,8 +50,6 @@ Password: `user1234`
 | Zones               | 1                                  | 4x4, 8x8                             | 3x3, 4x4, 3x6                      |
 | Range               | 20mm - 4000mm                      | 2mm - 4000mm                         | 10mm - 5000mm                      |
 
-![Alt text](images/ecobin.png)
-
 ## Points to describe
 
 ### Project Definition and Plan (30 points)
@@ -64,3 +76,11 @@ Password: `user1234`
 - How well did the test criteria results meet the expectations?
 - What would be done differently or improved?
 - Ask yourself: "If I were a beginner reading this project, would I understand how to recreate it?"
+
+## Questions
+
+- Overview (costs, number of trucks, schedule, routes)
+- Current challenges
+- What data is tracked/managed/analyzed
+- Future plans?
+- Regulations?
