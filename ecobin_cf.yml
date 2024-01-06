@@ -1,0 +1,809 @@
+Parameters:
+  AlertsTableName:
+    Type: String
+    Default: Alerts
+    Description: Table that will store the alerts retrieved from the Cellular Boards
+    AllowedPattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]{1,253}[a-zA-Z0-9]$"
+    ConstraintDescription: >-
+      Table name must contain: 3-255 characters; only lowercase letters or
+      numbers or '.' '_' '-'
+  DevicesTableName:
+    Type: String
+    Default: Devices
+    Description: Table storing the name of the different Cellular Boards connected
+    AllowedPattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]{1,253}[a-zA-Z0-9]$"
+    ConstraintDescription: >-
+      Table name must contain: 3-255 characters; only lowercase letters or
+      numbers or '.' '_' '-'
+  APIGatewayName:
+    Type: String
+    Default: api
+    Description: API to be deployed with the different resources & methods
+    AllowedPattern: '^[a-zA-Z0-9_.\-]{1,1023}$'
+    ConstraintDescription: >-
+      API Gateway name must contain: 1-1023 characters; letters, numbers or the
+      symbols '.' '-' '_' '\'
+  LambdaFunctionName:
+    Type: String
+    Default: LambdaFunction
+    Description: >-
+      Lambda Function triggered when the APIGateway requests data from the
+      storage tables
+    AllowedPattern: "^[a-zA-Z0-9_-]{1,63}$"
+    ConstraintDescription: >-
+      Lambda Function name must contain: 1-63 characters; letters, numbers,
+      hyphens, or underscores with no spaces
+  S3BucketName:
+    Type: String
+    Default: ecobin-s3bucket
+    Description: S3 bucket that will host the website
+    AllowedPattern: "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+    ConstraintDescription: >-
+      S3 Bucket must contain: 3-63 characters; only lowercase letters or numbers
+      or '-'
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: Storage
+        Parameters:
+          - AlertsTableName
+          - DevicesTableName
+      - Label:
+          default: Event Handling
+        Parameters:
+          - APIGatewayName
+          - LambdaFunctionName
+      - Label:
+          default: FrontEnd
+        Parameters:
+          - S3BucketName
+    ParameterLabels:
+      DevicesTableName:
+        default: Devices Table Name
+      AlertsTableName:
+        default: Alerts Table Name
+      APIGatewayName:
+        default: API Gateway Name
+      LambdaFunctionName:
+        default: Lambda Function Name
+      S3BucketName:
+        default: S3 Bucket Name
+  "AWS::CloudFormation::Designer":
+    df5e5b05-ba2a-498b-ad58-50036cc7d4fa:
+      size:
+        width: 150
+        height: 150
+      position:
+        x: 60
+        "y": 300
+      z: 1
+      embeds: []
+    08477de5-3a66-4887-a27d-162e584e3e47:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 270
+        "y": 300
+      z: 1
+      embeds: []
+      dependson:
+        - df5e5b05-ba2a-498b-ad58-50036cc7d4fa
+    4ecccef6-1c5f-4c9f-8908-c887412ee55a:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 390
+        "y": 300
+      z: 1
+      embeds: []
+    38593e62-bed4-43dd-b10b-fe12d4e5211f:
+      size:
+        width: 150
+        height: 150
+      position:
+        x: 270
+        "y": 90
+      z: 1
+      embeds: []
+    a425bf66-cc08-41a3-89a4-a89ac6078805:
+      size:
+        width: 150
+        height: 150
+      position:
+        x: 60
+        "y": 90
+      z: 1
+      embeds: []
+    85ec063c-a3b0-4e17-b535-26a88077190e:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 480
+        "y": 90
+      z: 1
+      embeds: []
+    fc39e1da-8c0f-4883-9326-5674fbef21e1:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 270
+        "y": 420
+      z: 1
+      embeds: []
+    bcb50824-a4a5-4aba-b123-182f580f7554:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 390
+        "y": 420
+      z: 1
+      embeds: []
+    86cd6c1b-2233-4513-94f6-82236b01f0f2:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 510
+        "y": 210
+      z: 1
+      embeds: []
+    52963c2f-3712-4743-bc59-8b3d50b5c833:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 510
+        "y": 330
+      z: 1
+      embeds: []
+    e59fd3fb-e51c-4f06-9852-2956e6cf8b8d:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 510
+        "y": 450
+      z: 1
+      embeds: []
+    cc7f8a25-9616-4e1d-941a-9536365b2e46:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 60
+        "y": 510
+      z: 1
+      embeds: []
+      dependson:
+        - 38593e62-bed4-43dd-b10b-fe12d4e5211f
+        - e59fd3fb-e51c-4f06-9852-2956e6cf8b8d
+    45dd3940-671c-43fb-90fe-7928aeda517a:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 180
+        "y": 540
+      z: 1
+      embeds: []
+      dependson:
+        - 38593e62-bed4-43dd-b10b-fe12d4e5211f
+        - e59fd3fb-e51c-4f06-9852-2956e6cf8b8d
+    71b6609e-e0d9-4d2b-8440-6f71404308b7:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 300
+        "y": 540
+      z: 1
+      embeds: []
+    62cb25b2-15ae-4e68-9d02-f92e0a0f47d1:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 420
+        "y": 570
+      z: 1
+      embeds: []
+    a581fe12-e629-4039-9789-d22b73484078:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 540
+        "y": 570
+      z: 1
+      embeds: []
+      dependson:
+        - 62cb25b2-15ae-4e68-9d02-f92e0a0f47d1
+        - 71b6609e-e0d9-4d2b-8440-6f71404308b7
+    aa8a637f-dea9-4724-a442-f8f5c7007248:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 600
+        "y": 90
+      z: 1
+      embeds: []
+Resources:
+  AlertsTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Ref AlertsTableName
+      AttributeDefinitions:
+        - AttributeName: Device_UUID
+          AttributeType: S
+        - AttributeName: Timestamp
+          AttributeType: "N"
+      KeySchema:
+        - AttributeName: Device_UUID
+          KeyType: HASH
+        - AttributeName: Timestamp
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: 86cd6c1b-2233-4513-94f6-82236b01f0f2
+  DevicesTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Ref DevicesTableName
+      AttributeDefinitions:
+        - AttributeName: Device_UUID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Device_UUID
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: fc39e1da-8c0f-4883-9326-5674fbef21e1
+  AWSProjectRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: EcoBin-Role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - iot.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: AWSLambdaBasicExecutionRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "logs:CreateLogGroup"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - !Sub >-
+                    arn:aws:logs:${AWS::Region}:*:log-group:/aws/lambda/${LambdaFunctionName}:*
+        - PolicyName: AccessDynamoDB
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:Scan"
+                  - "dynamodb:Query"
+                Resource:
+                  - !Sub >-
+                    arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlertsTable}
+                  - !Sub >-
+                    arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DevicesTable}
+        - PolicyName: IoTCore_To_DynamoDb
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "dynamodb:PutItem"
+                Resource:
+                  - !Sub >-
+                    arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlertsTable}
+                  - !Sub >-
+                    arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DevicesTable}
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: 85ec063c-a3b0-4e17-b535-26a88077190e
+  LambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Runtime: python3.9
+      Role: !GetAtt AWSProjectRole.Arn
+      FunctionName: !Ref LambdaFunctionName
+      Handler: index.handler
+      Environment:
+        Variables:
+          AlertsTable: !Ref AlertsTable
+          DevicesTable: !Ref DevicesTable
+          RegionName: !Ref "AWS::Region"
+      Code:
+        ZipFile: !Sub
+          - >-
+            import boto3
+
+            import json
+
+            import os
+
+
+            from boto3.dynamodb.types import TypeDeserializer
+
+            from boto3.dynamodb.conditions import Key
+
+            from datetime import datetime, timedelta
+
+            from decimal import Decimal
+
+
+            #environment vars
+
+            alerts_table_name = os.environ["AlertsTable"]
+
+            devices_table_name = os.environ["DevicesTable"]
+
+            region = os.environ["RegionName"]
+
+
+            #create connection to dynamodb client & resource
+
+            client = boto3.client('dynamodb', region_name = region) #same region
+            as dynamodb and iotcore
+
+            resource = boto3.resource('dynamodb', region_name = region)
+
+
+            #the resources created in the API Gateway
+
+            bins_resource = '/bins'
+
+            bins_id_resource = '/bins/{id}'
+
+
+            #Get the registered device names from the dynamodb table
+
+            #Return the list of devices
+
+            def getDeviceNames(table):
+                device_list = list()
+                if table["Count"] > 0:
+                    deserializer = TypeDeserializer()
+                    for record in table["Items"]:
+                        for record_key, record_value in record.items():
+                            if record_key == 'Device_UUID':
+                                device_name = deserializer.deserialize(record_value)
+                                device_list.append(device_name)      
+                return device_list
+              
+            #Convert the decimal items retrieved from the dynamodb table into
+            floats
+
+            #Return the db structure converted
+
+            def convertDBinfo(db_data): #parse alerts info
+                conv_data = dict()
+                if db_data["Count"] > 0:
+                    for record in db_data["Items"]:
+                        for record_key, record_value in record.items():
+                            if type(record_value) != str:
+                                record[record_key] = float(record_value)
+                    conv_data = db_data["Items"]
+                return conv_data
+                
+            #Parse the dynamodb data to a structured dictionary
+
+            #Return the structured data dictionary
+
+            def parseDBinfo(db_data):
+                conv_data = convertDBinfo(db_data)
+                data = dict()
+                if db_data["Count"] > 0:
+                    aux = list()
+                    device_name = conv_data[0]["Device_UUID"]
+                    for record in conv_data:
+                        del record["Device_UUID"]
+                        record['Timestamp'] = str((datetime.fromtimestamp(record["Timestamp"]/1000)).isoformat()) #adjust to create a Key with datetime (need to /1000 because it was stored in ms)
+                        aux.append(record) 
+                    data["name"] = device_name
+                    data["data"] = aux
+                return data
+
+            #Handle the different requests, routed through the API Gateway
+
+            #Return the response to the client
+
+            def handler(event, context):
+                response = {
+                    'statusCode': None,
+                    'body': None,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                }
+                alerts_table = resource.Table(alerts_table_name)
+                
+                if (event['resource'] == bins_id_resource):
+                    devExist = alerts_table.query(
+                            KeyConditionExpression = Key('Device_UUID').eq(event['pathParameters']['id']),
+                            Limit = 1,
+                            ScanIndexForward = False
+                        )
+                        
+                    if devExist["Count"] == 0: #if the device doesnt exist
+                        response['statusCode'] = 404
+                        response['body'] = json.dumps({"Error": "Device does not exist!"})
+                        return response
+                        
+                    if event['queryStringParameters'] != None:
+                        for param in event['queryStringParameters']:
+                            if (param != 'start') & (param != 'end'):
+                                response['statusCode'] = 400
+                                response['body'] = json.dumps({"Error": "Invalid Query Parameters"})
+                                return response
+                                
+                            if (len(event['multiValueQueryStringParameters'][param]) > 1):
+                                response['statusCode'] = 400
+                                response['body'] = json.dumps({"Error": "Repeated Query Parameters"})
+                                return response
+                                
+                        try:
+                            start = Decimal(datetime.timestamp(datetime.strptime(event["queryStringParameters"]["start"], '%Y-%m-%dT%H:%M:%S')))*1000 #convert from string to decimal * 1000(cause it is stored in ms)
+                            end = Decimal(datetime.timestamp(datetime.strptime(event["queryStringParameters"]["end"], '%Y-%m-%dT%H:%M:%S')))*1000 #convert from string to decimal * 1000(cause it is stored in ms)
+                        
+                        except KeyError as e:
+                            if str(e) == "'end'":
+                                end = Decimal(datetime.timestamp(datetime.now()))*1000 #get actual time
+                                
+                            if str(e) == "'start'":
+                                response['statusCode'] = 400
+                                response['body'] = json.dumps({"Error": "Insert Start Time"})
+                                return response
+                                
+                        except ValueError:
+                            response['statusCode'] = 400
+                            response['body'] = json.dumps({"Error": "Wrong Parameter Values or Formatting"})
+                            return response
+                            
+                        if (start >= end):
+                            response['statusCode'] = 400
+                            response['body'] = json.dumps({"Error": "StartDate >= EndDate"})
+                            return response
+                        
+                        if (start < 0) | (end < 0):
+                            response['statusCode'] = 400
+                            response['body'] = json.dumps({"Error": "Invalid date"})
+                            return response
+                                
+                    else: #case no params => gets the last 5 days
+                        start = Decimal(datetime.timestamp(datetime.now()) - timedelta(days = 5).total_seconds())*1000 #get last 5 days data
+                        end = Decimal(datetime.timestamp(datetime.now()))*1000 #get actual time
+                        
+                    dynamo_data = alerts_table.query(
+                        KeyConditionExpression =  Key('Device_UUID').eq(event['pathParameters']['id']) & Key('Timestamp').between(start, end)
+                        )
+                    data = parseDBinfo(dynamo_data)
+                    
+                elif event['resource'] == bins_resource:
+                    devices = client.scan(
+                        TableName = devices_table_name)
+                    
+                    device_list = getDeviceNames(devices)
+                    data = list()
+                    for i in range(len(device_list)):
+                        dynamo_data = alerts_table.query(
+                            KeyConditionExpression = Key('Device_UUID').eq(device_list[i]),
+                            Limit = 1,
+                            ScanIndexForward = False
+                        )
+                        data.append(parseDBinfo(dynamo_data))
+                        data[i]["data"] = data[i]["data"][0]
+                else:
+                    response['statusCode'] = 404
+                    response['body'] = json.dumps({"Error": "Resource not found!"})
+                    return response
+
+                if data == {}: # if there is no data to be retrieved by specific method
+                    response['statusCode'] = 204
+                    return response
+
+                response['statusCode'] = 200
+                response['body'] = json.dumps(data)
+                return response
+          - lambda_function_role_arn: !Ref AWSProjectRole
+    DependsOn:
+      - DevicesTable
+      - AlertsTable
+      - AWSProjectRole
+    Description: IoT Bins Project Function
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: e59fd3fb-e51c-4f06-9852-2956e6cf8b8d
+  RestAPIGateway:
+    Type: "AWS::ApiGateway::RestApi"
+    Properties:
+      Name: !Ref APIGatewayName
+      Description: My API Gateway
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: df5e5b05-ba2a-498b-ad58-50036cc7d4fa
+  APIBinsResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId: !Ref RestAPIGateway
+      ParentId: !GetAtt
+        - RestAPIGateway
+        - RootResourceId
+      PathPart: bins
+    DependsOn: RestAPIGateway
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: 38593e62-bed4-43dd-b10b-fe12d4e5211f
+  APIIDResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId: !Ref RestAPIGateway
+      ParentId: !Ref APIBinsResource
+      PathPart: "{id}"
+    DependsOn:
+      - RestAPIGateway
+      - APIBinsResource
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: a425bf66-cc08-41a3-89a4-a89ac6078805
+  GetBinsMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref RestAPIGateway
+      ResourceId: !Ref APIBinsResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - >-
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt LambdaFunction.Arn
+        IntegrationResponses:
+          - ResponseTemplates:
+              application/json: ""
+            StatusCode: 200
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: Empty
+    DependsOn:
+      - APIBinsResource
+      - RestAPIGateway
+      - LambdaFunction
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: 62cb25b2-15ae-4e68-9d02-f92e0a0f47d1
+  GetIDMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref RestAPIGateway
+      ResourceId: !Ref APIIDResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - >-
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt LambdaFunction.Arn
+        IntegrationResponses:
+          - ResponseTemplates:
+              application/json: ""
+            StatusCode: 200
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: Empty
+    DependsOn:
+      - APIIDResource
+      - RestAPIGateway
+      - LambdaFunction
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: 71b6609e-e0d9-4d2b-8440-6f71404308b7
+  RestAPIDeployment:
+    Type: "AWS::ApiGateway::Deployment"
+    Properties:
+      RestApiId: !Ref RestAPIGateway
+      Description: Deployed Rest API
+    DependsOn:
+      - GetBinsMethod
+      - GetIDMethod
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: a581fe12-e629-4039-9789-d22b73484078
+  APILambdaBinsPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Ref "AWS::AccountId"
+      SourceArn: !Sub >-
+        arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPIGateway}/*/GET/bins
+    DependsOn:
+      - APIBinsResource
+      - LambdaFunction
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: 45dd3940-671c-43fb-90fe-7928aeda517a
+  APILambdaIdPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Ref "AWS::AccountId"
+      SourceArn: !Sub >-
+        arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPIGateway}/*/GET/bins/{id}
+    DependsOn:
+      - APIBinsResource
+      - LambdaFunction
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: cc7f8a25-9616-4e1d-941a-9536365b2e46
+  RestAPIStage:
+    Type: "AWS::ApiGateway::Stage"
+    Properties:
+      StageName: demo
+      RestApiId: !Ref RestAPIGateway
+      DeploymentId: !Ref RestAPIDeployment
+      MethodSettings:
+        - ResourcePath: /bins
+          HttpMethod: GET
+        - ResourcePath: "/bins/{id}"
+          HttpMethod: GET
+    DependsOn:
+      - RestAPIDeployment
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: aa8a637f-dea9-4724-a442-f8f5c7007248
+  IoTRuleAlerts:
+    Type: "AWS::IoT::TopicRule"
+    Properties:
+      RuleName: Alerts_To_DynamoDB
+      TopicRulePayload:
+        RuleDisabled: false
+        AwsIotSqlVersion: 2016-03-23
+        Sql: SELECT Device_UUID, Status, timestamp() as Timestamp FROM 'alerts'
+        Actions:
+          - DynamoDBv2:
+              RoleArn: !GetAtt AWSProjectRole.Arn
+              PutItem:
+                TableName: !Ref AlertsTable
+    DependsOn:
+      - AlertsTable
+      - AWSProjectRole
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: 52963c2f-3712-4743-bc59-8b3d50b5c833
+  IoTRuleDevicesRegistered:
+    Type: "AWS::IoT::TopicRule"
+    Properties:
+      RuleName: DevicesRegistered_to_DynamoDB
+      TopicRulePayload:
+        RuleDisabled: false
+        AwsIotSqlVersion: 2016-03-23
+        Sql: SELECT Device_UUID FROM 'alerts'
+        Actions:
+          - DynamoDBv2:
+              RoleArn: !GetAtt AWSProjectRole.Arn
+              PutItem:
+                TableName: !Ref DevicesTable
+    DependsOn:
+      - DevicesTable
+      - AWSProjectRole
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: bcb50824-a4a5-4aba-b123-182f580f7554
+  S3FrontEndBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref S3BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      WebsiteConfiguration:
+        IndexDocument: index.html
+    DependsOn: RestAPIGateway
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: 08477de5-3a66-4887-a27d-162e584e3e47
+  S3BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref S3FrontEndBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Principal: "*"
+            Action: "s3:GetObject"
+            Effect: Allow
+            Resource: !Join
+              - ""
+              - - !GetAtt S3FrontEndBucket.Arn
+                - /*
+    DependsOn: S3FrontEndBucket
+    Metadata:
+      "AWS::CloudFormation::Designer":
+        id: 4ecccef6-1c5f-4c9f-8908-c887412ee55a
+Outputs:
+  AlertsTable:
+    Description: Table regarding alerts data.
+    Value: !Ref AlertsTable
+  DevicesTable:
+    Description: Table regarding device names.
+    Value: !Ref DevicesTable
+  AWSProjectRole:
+    Description: Role associated with the lambdafunction
+    Value: !Ref AWSProjectRole
+  LambdaFunction:
+    Description: Lambda Function
+    Value: !Ref LambdaFunction
+  RestAPIGateway:
+    Description: API Root ID
+    Value: !GetAtt RestAPIGateway.RootResourceId
+  APIBinsResource:
+    Description: Resource to get all the devices
+    Value: !Ref APIBinsResource
+  APIIDResource:
+    Description: ID Resource for specific device
+    Value: !Ref APIIDResource
+  GetBinsMethod:
+    Description: Get Method to be executed when the APIBinsResource is triggered
+    Value: !Ref APIBinsResource
+  GetIDMethod:
+    Description: Get Method to be executed when the APIResource is triggered
+    Value: !Ref GetIDMethod
+  RestAPIDeployment:
+    Description: Deploy API created
+    Value: !Ref RestAPIDeployment
+  IoTRuleAlerts:
+    Description: Stream data from the IoT Core to the table with alerts data
+    Value: !Ref IoTRuleAlerts
+  IoTRuleDevicesRegistered:
+    Description: Stream data from the IoT Core to the table with device names
+    Value: !Ref IoTRuleDevicesRegistered
+  S3FrontEndBucket:
+    Description: Host the serverless frontend of the project
+    Value: !Ref S3FrontEndBucket
