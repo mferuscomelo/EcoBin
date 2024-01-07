@@ -23,12 +23,21 @@ Parameters:
     ConstraintDescription: >-
       API Gateway name must contain: 1-1023 characters; letters, numbers or the
       symbols '.' '-' '_' '\'
-  LambdaFunctionName:
+  APILambdaFunctionName:
     Type: String
-    Default: LambdaFunction
+    Default: APILambdaFunction
     Description: >-
       Lambda Function triggered when the APIGateway requests data from the
       storage tables
+    AllowedPattern: "^[a-zA-Z0-9_-]{1,63}$"
+    ConstraintDescription: >-
+      Lambda Function name must contain: 1-63 characters; letters, numbers,
+      hyphens, or underscores with no spaces
+  DeviceLambdaFunctionName:
+    Type: String
+    Default: DeviceLambdaFunction
+    Description: >-
+      Lambda Function triggered when a device is to be updated
     AllowedPattern: "^[a-zA-Z0-9_-]{1,63}$"
     ConstraintDescription: >-
       Lambda Function name must contain: 1-63 characters; letters, numbers,
@@ -53,7 +62,8 @@ Metadata:
           default: Event Handling
         Parameters:
           - APIGatewayName
-          - LambdaFunctionName
+          - APILambdaFunctionName
+          - DeviceLambdaFunctionName
       - Label:
           default: FrontEnd
         Parameters:
@@ -65,8 +75,10 @@ Metadata:
         default: Alerts Table Name
       APIGatewayName:
         default: API Gateway Name
-      LambdaFunctionName:
+      APILambdaFunctionName:
         default: Lambda Function Name
+      DeviceLambdaFunctionName:
+        default: Device Lambda Function Name
       S3BucketName:
         default: S3 Bucket Name
   "AWS::CloudFormation::Designer":
@@ -299,7 +311,9 @@ Resources:
                   - "logs:PutLogEvents"
                 Resource:
                   - !Sub >-
-                    arn:aws:logs:${AWS::Region}:*:log-group:/aws/lambda/${LambdaFunctionName}:*
+                    arn:aws:logs:${AWS::Region}:*:log-group:/aws/lambda/${APILambdaFunctionName}:*
+                  - !Sub >-
+                    arn:aws:logs:${AWS::Region}:*:log-group:/aws/lambda/${DeviceLambdaFunctionName}:*
         - PolicyName: AccessDynamoDB
           PolicyDocument:
             Version: 2012-10-17
@@ -318,7 +332,10 @@ Resources:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
-                Action: "dynamodb:PutItem"
+                Action:
+                  - "dynamodb:PutItem"
+                  - "dynamodb:Query"
+                  - "dynamodb:UpdateItem"
                 Resource:
                   - !Sub >-
                     arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlertsTable}
@@ -327,12 +344,12 @@ Resources:
     Metadata:
       "AWS::CloudFormation::Designer":
         id: 85ec063c-a3b0-4e17-b535-26a88077190e
-  LambdaFunction:
+  APILambdaFunction:
     Type: "AWS::Lambda::Function"
     Properties:
       Runtime: python3.9
       Role: !GetAtt AWSProjectRole.Arn
-      FunctionName: !Ref LambdaFunctionName
+      FunctionName: !Ref APILambdaFunctionName
       Handler: index.handler
       Environment:
         Variables:
@@ -358,7 +375,7 @@ Resources:
             from decimal import Decimal
 
 
-            #environment vars
+            # environment vars
 
             alerts_table_name = os.environ["AlertsTable"]
 
@@ -367,24 +384,23 @@ Resources:
             region = os.environ["RegionName"]
 
 
-            #create connection to dynamodb client & resource
+            # create connection to dynamodb client & resource
 
-            client = boto3.client('dynamodb', region_name = region) #same region
-            as dynamodb and iotcore
+            client = boto3.client('dynamodb', region_name = region) #same region as dynamodb and iotcore
 
             resource = boto3.resource('dynamodb', region_name = region)
 
 
-            #the resources created in the API Gateway
+            # the resources created in the API Gateway
 
             bins_resource = '/bins'
 
             bins_id_resource = '/bins/{id}'
 
 
-            #Get the registered device names from the dynamodb table
+            # Get the registered device names from the dynamodb table
 
-            #Return the list of devices
+            # Return the list of devices
 
             def getDeviceNames(table):
                 device_list = list()
@@ -397,10 +413,9 @@ Resources:
                                 device_list.append(device_name)      
                 return device_list
               
-            #Convert the decimal items retrieved from the dynamodb table into
-            floats
+            # Convert the decimal items retrieved from the dynamodb table into floats
 
-            #Return the db structure converted
+            # Return the db structure converted
 
             def convertDBinfo(db_data): #parse alerts info
                 conv_data = dict()
@@ -412,9 +427,9 @@ Resources:
                     conv_data = db_data["Items"]
                 return conv_data
                 
-            #Parse the dynamodb data to a structured dictionary
+            # Parse the dynamodb data to a structured dictionary
 
-            #Return the structured data dictionary
+            # Return the structured data dictionary
 
             def parseDBinfo(db_data):
                 conv_data = convertDBinfo(db_data)
@@ -532,6 +547,7 @@ Resources:
                 response['statusCode'] = 200
                 response['body'] = json.dumps(data)
                 return response
+
           - lambda_function_role_arn: !Ref AWSProjectRole
     DependsOn:
       - DevicesTable
@@ -541,6 +557,112 @@ Resources:
     Metadata:
       "AWS::CloudFormation::Designer":
         id: e59fd3fb-e51c-4f06-9852-2956e6cf8b8d
+  DeviceLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Runtime: python3.9
+      Role: !GetAtt AWSProjectRole.Arn
+      FunctionName: !Ref DeviceLambdaFunctionName
+      Handler: index.handler
+      Environment:
+        Variables:
+          AlertsTable: !Ref AlertsTable
+          DevicesTable: !Ref DevicesTable
+          RegionName: !Ref "AWS::Region"
+      Code:
+        ZipFile: !Sub
+          - >-
+            import os
+
+            import boto3 
+
+            from boto3.dynamodb.conditions import Key
+
+            from datetime import datetime
+
+
+            devices_table_name = os.environ["DevicesTable"]
+
+            region = os.environ["RegionName"]
+
+
+            class DevicesTable:
+                def __init__(self):
+                    self.dynamodb = boto3.resource('dynamodb', region_name=region)
+                    self.table = self.dynamodb.Table(devices_table_name)
+
+                def get_device(self, device_uuid):
+                    response = self.table.query(
+                        KeyConditionExpression=Key('Device_UUID').eq(device_uuid)
+                    )
+                    return response['Items']
+
+                def create_device(self, device_uuid):
+                    device = {
+                        'Device_UUID': device_uuid,
+                        'Latitude': 0,
+                        'Longitude': 0,
+                        'Fill_Data': [],
+                        'Temperature': 0,
+                        'Battery': 0,
+                        'Last_Updated': int(datetime.timestamp(datetime.now()))
+                    }
+                    self.table.put_item(Item=device)
+                    return device
+
+                def update_field(self, device_uuid, field_name, field_value):
+                    self.table.update_item(
+                        Key={'Device_UUID': device_uuid},
+                        UpdateExpression=f"set {field_name} = :v, Last_Updated=:lu",
+                        ExpressionAttributeValues={
+                            ':v': field_value,
+                            ':lu': int(datetime.timestamp(datetime.now()))
+                        },
+                        ReturnValues="UPDATED_NEW"
+                    )
+
+            def handler(event, context):
+                print(event)
+                
+                devices_table = DevicesTable()
+                device_uuid = event['Device_UUID']
+                device = devices_table.get_device(device_uuid)
+                
+                if not device:
+                    print('Could not find device. Creating a new one...')
+                    device = devices_table.create_device(device_uuid)
+                    
+                print('Device found')
+                print(device)
+
+                if 'Battery' in event:
+                    print('Updating battery')
+                    devices_table.update_field(device_uuid, 'Battery', event['Battery'])
+
+                if 'Temperature' in event:
+                    print('Updating temperature')
+                    devices_table.update_field(device_uuid, 'Temperature', event['Temperature'])
+
+                if 'Fill_Data' in event:
+                    print('Updating fill data')
+                    devices_table.update_field(device_uuid, 'Fill_Data', event['Fill_Data'])
+
+                if 'Latitude' in event:
+                    print('Updating latitude')
+                    devices_table.update_field(device_uuid, 'Latitude', event['Latitude'])
+
+                if 'Longitude' in event:
+                    print('Updating longitude')
+                    devices_table.update_field(device_uuid, 'Longitude', event['Longitude'])
+                    
+                return event
+
+          - lambda_function_role_arn: !Ref AWSProjectRole
+    DependsOn:
+      - DevicesTable
+      - AlertsTable
+      - AWSProjectRole
+    Description: IoT Bins Project Function
   RestAPIGateway:
     Type: "AWS::ApiGateway::RestApi"
     Properties:
@@ -589,7 +711,7 @@ Resources:
         Uri: !Sub
           - >-
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
-          - lambdaArn: !GetAtt LambdaFunction.Arn
+          - lambdaArn: !GetAtt APILambdaFunction.Arn
         IntegrationResponses:
           - ResponseTemplates:
               application/json: ""
@@ -602,7 +724,7 @@ Resources:
     DependsOn:
       - APIBinsResource
       - RestAPIGateway
-      - LambdaFunction
+      - APILambdaFunction
     Metadata:
       "AWS::CloudFormation::Designer":
         id: 62cb25b2-15ae-4e68-9d02-f92e0a0f47d1
@@ -619,7 +741,7 @@ Resources:
         Uri: !Sub
           - >-
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
-          - lambdaArn: !GetAtt LambdaFunction.Arn
+          - lambdaArn: !GetAtt APILambdaFunction.Arn
         IntegrationResponses:
           - ResponseTemplates:
               application/json: ""
@@ -632,7 +754,7 @@ Resources:
     DependsOn:
       - APIIDResource
       - RestAPIGateway
-      - LambdaFunction
+      - APILambdaFunction
     Metadata:
       "AWS::CloudFormation::Designer":
         id: 71b6609e-e0d9-4d2b-8440-6f71404308b7
@@ -650,7 +772,7 @@ Resources:
   APILambdaBinsPermission:
     Type: "AWS::Lambda::Permission"
     Properties:
-      FunctionName: !Ref LambdaFunctionName
+      FunctionName: !Ref APILambdaFunctionName
       Action: "lambda:InvokeFunction"
       Principal: apigateway.amazonaws.com
       SourceAccount: !Ref "AWS::AccountId"
@@ -658,14 +780,14 @@ Resources:
         arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPIGateway}/*/GET/bins
     DependsOn:
       - APIBinsResource
-      - LambdaFunction
+      - APILambdaFunction
     Metadata:
       "AWS::CloudFormation::Designer":
         id: 45dd3940-671c-43fb-90fe-7928aeda517a
   APILambdaIdPermission:
     Type: "AWS::Lambda::Permission"
     Properties:
-      FunctionName: !Ref LambdaFunctionName
+      FunctionName: !Ref APILambdaFunctionName
       Action: "lambda:InvokeFunction"
       Principal: apigateway.amazonaws.com
       SourceAccount: !Ref "AWS::AccountId"
@@ -673,7 +795,7 @@ Resources:
         arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPIGateway}/*/GET/bins/{id}
     DependsOn:
       - APIBinsResource
-      - LambdaFunction
+      - APILambdaFunction
     Metadata:
       "AWS::CloudFormation::Designer":
         id: cc7f8a25-9616-4e1d-941a-9536365b2e46
@@ -712,25 +834,73 @@ Resources:
     Metadata:
       "AWS::CloudFormation::Designer":
         id: 52963c2f-3712-4743-bc59-8b3d50b5c833
-  IoTRuleDevicesRegistered:
+  IoTRuleDeviceRegister:
     Type: "AWS::IoT::TopicRule"
     Properties:
-      RuleName: DevicesRegistered_to_DynamoDB
+      RuleName: DeviceRegister_to_DynamoDB
       TopicRulePayload:
         RuleDisabled: false
         AwsIotSqlVersion: 2016-03-23
-        Sql: SELECT Device_UUID FROM 'alerts'
+        Sql: SELECT * FROM 'device'
         Actions:
-          - DynamoDBv2:
-              RoleArn: !GetAtt AWSProjectRole.Arn
-              PutItem:
-                TableName: !Ref DevicesTable
+          - Lambda:
+              FunctionArn: !GetAtt DeviceLambdaFunction.Arn
     DependsOn:
-      - DevicesTable
+      - DeviceLambdaFunction
       - AWSProjectRole
-    Metadata:
-      "AWS::CloudFormation::Designer":
-        id: bcb50824-a4a5-4aba-b123-182f580f7554
+  IoTRuleBatteryUpdate:
+    Type: "AWS::IoT::TopicRule"
+    Properties:
+      RuleName: BatteryUpdate_to_DynamoDB
+      TopicRulePayload:
+        RuleDisabled: false
+        AwsIotSqlVersion: 2016-03-23
+        Sql: SELECT * FROM 'battery'
+        Actions:
+          - Lambda:
+              FunctionArn: !GetAtt DeviceLambdaFunction.Arn
+    DependsOn:
+      - DeviceLambdaFunction
+      - AWSProjectRole
+  IoTRuleTemperatureUpdate:
+    Type: "AWS::IoT::TopicRule"
+    Properties:
+      RuleName: TemperatureUpdate_to_DynamoDB
+      TopicRulePayload:
+        RuleDisabled: false
+        AwsIotSqlVersion: 2016-03-23
+        Sql: SELECT * FROM 'temperature'
+        Actions:
+          - Lambda:
+              FunctionArn: !GetAtt DeviceLambdaFunction.Arn
+  IoTRuleFillDataUpdate:
+    Type: "AWS::IoT::TopicRule"
+    Properties:
+      RuleName: FillDataUpdate_to_DynamoDB
+      TopicRulePayload:
+        RuleDisabled: false
+        AwsIotSqlVersion: 2016-03-23
+        Sql: SELECT * FROM 'fill_data'
+        Actions:
+          - Lambda:
+              FunctionArn: !GetAtt DeviceLambdaFunction.Arn
+    DependsOn:
+      - DeviceLambdaFunction
+      - AWSProjectRole
+  IoTRuleLocationUpdate:
+    Type: "AWS::IoT::TopicRule"
+    Properties:
+      RuleName: LocationUpdate_to_DynamoDB
+      TopicRulePayload:
+        RuleDisabled: false
+        AwsIotSqlVersion: 2016-03-23
+        Sql: SELECT * FROM 'location'
+        Actions:
+          - Lambda:
+              FunctionArn: !GetAtt DeviceLambdaFunction.Arn
+    DependsOn:
+      - DeviceLambdaFunction
+      - AWSProjectRole
   S3FrontEndBucket:
     Type: "AWS::S3::Bucket"
     Properties:
@@ -775,11 +945,14 @@ Outputs:
     Description: Table regarding device names.
     Value: !Ref DevicesTable
   AWSProjectRole:
-    Description: Role associated with the lambdafunction
+    Description: Role associated with the APILambdaFunction
     Value: !Ref AWSProjectRole
-  LambdaFunction:
+  APILambdaFunction:
     Description: Lambda Function
-    Value: !Ref LambdaFunction
+    Value: !Ref APILambdaFunction
+  DeviceLambdaFunction:
+    Description: Lambda Function
+    Value: !Ref APILambdaFunction
   RestAPIGateway:
     Description: API Root ID
     Value: !GetAtt RestAPIGateway.RootResourceId
@@ -801,9 +974,21 @@ Outputs:
   IoTRuleAlerts:
     Description: Stream data from the IoT Core to the table with alerts data
     Value: !Ref IoTRuleAlerts
-  IoTRuleDevicesRegistered:
-    Description: Stream data from the IoT Core to the table with device names
-    Value: !Ref IoTRuleDevicesRegistered
+  IoTRuleDeviceRegister:
+    Description: Stream data from the IoT Core to update device battery levels
+    Value: !Ref IoTRuleDeviceRegister
+  IoTRuleBatteryUpdate:
+    Description: Stream data from the IoT Core to update device battery levels
+    Value: !Ref IoTRuleBatteryUpdate
+  IoTRuleTemperatureUpdate:
+    Description: Stream data from the IoT Core to update device temperature levels
+    Value: !Ref IoTRuleTemperatureUpdate
+  IoTRuleFillDataUpdate:
+    Description: Stream data from the IoT Core to update device fill data
+    Value: !Ref IoTRuleFillDataUpdate
+  IoTRuleLocationUpdate:
+    Description: Stream data from the IoT Core to update device location
+    Value: !Ref IoTRuleLocationUpdate
   S3FrontEndBucket:
     Description: Host the serverless frontend of the project
     Value: !Ref S3FrontEndBucket
