@@ -602,7 +602,7 @@ Resources:
                         'Device_UUID': device_uuid,
                         'Latitude': 0,
                         'Longitude': 0,
-                        'Fill_Data': [],
+                        'Fill_Data': 0,
                         'Temperature': 0,
                         'Battery': 0,
                         'Last_Updated': int(datetime.timestamp(datetime.now()))
@@ -880,7 +880,7 @@ Resources:
       TopicRulePayload:
         RuleDisabled: false
         AwsIotSqlVersion: 2016-03-23
-        Sql: SELECT * FROM 'fill_data'
+        Sql: SELECT * FROM 'fillData'
         Actions:
           - Lambda:
               FunctionArn: !GetAtt DeviceLambdaFunction.Arn
