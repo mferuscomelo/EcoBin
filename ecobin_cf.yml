@@ -629,7 +629,7 @@ Resources:
                 device = devices_table.get_device(device_uuid)
                 
                 if not device:
-                    print('Could not find device. Creating a new one...')
+                    print('Could not find the device. Creating a new one...')
                     device = devices_table.create_device(device_uuid)
                     
                 print('Device found')
@@ -815,6 +815,17 @@ Resources:
     Metadata:
       "AWS::CloudFormation::Designer":
         id: aa8a637f-dea9-4724-a442-f8f5c7007248
+  DeviceLambdaFunctionPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref DeviceLambdaFunction
+      Action: "lambda:InvokeFunction"
+      Principal: iot.amazonaws.com
+      SourceAccount: !Ref "AWS::AccountId"
+      SourceArn: !Sub >-
+        arn:aws:iot:${AWS::Region}:${AWS::AccountId}:rule/*
+    DependsOn:
+      - DeviceLambdaFunction
   IoTRuleAlerts:
     Type: "AWS::IoT::TopicRule"
     Properties:
@@ -873,6 +884,9 @@ Resources:
         Actions:
           - Lambda:
               FunctionArn: !GetAtt DeviceLambdaFunction.Arn
+    DependsOn:
+      - DeviceLambdaFunction
+      - AWSProjectRole
   IoTRuleFillDataUpdate:
     Type: "AWS::IoT::TopicRule"
     Properties:
