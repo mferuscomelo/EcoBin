@@ -636,23 +636,23 @@ Resources:
                 print(device)
 
                 if 'Battery' in event:
-                    print('Updating battery')
+                    print(f"Updating battery to {event['Battery']}")
                     devices_table.update_field(device_uuid, 'Battery', event['Battery'])
 
                 if 'Temperature' in event:
-                    print('Updating temperature')
+                    print(f"Updating temperature to {event['Temperature']}")
                     devices_table.update_field(device_uuid, 'Temperature', event['Temperature'])
 
                 if 'Fill_Data' in event:
-                    print('Updating fill data')
+                    print(f"Updating fill data to {event['Fill_Data']}")
                     devices_table.update_field(device_uuid, 'Fill_Data', event['Fill_Data'])
 
                 if 'Latitude' in event:
-                    print('Updating latitude')
+                    print(f"Updating latitude to {event['Latitude']}")
                     devices_table.update_field(device_uuid, 'Latitude', event['Latitude'])
 
                 if 'Longitude' in event:
-                    print('Updating longitude')
+                    print(f"Updating longitude to {event['Longitude']}")
                     devices_table.update_field(device_uuid, 'Longitude', event['Longitude'])
                     
                 return event
