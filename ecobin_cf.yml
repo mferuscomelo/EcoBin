@@ -393,31 +393,36 @@ Resources:
 
             # the resources created in the API Gateway
 
-            bins_resource = '/bins'
+            devices_resource = '/devices'
 
-            bins_id_resource = '/bins/{id}'
+            devices_id_resource = '/devices/{id}'
+
+            alerts_resource = '/alerts'
+
+            alerts_id_resource = '/alerts/{id}'
 
 
-            # Get the registered device names from the dynamodb table
+            # Get the UUIDs from the dynamodb table
 
-            # Return the list of devices
+            # Return the list of UUIDs
 
-            def getDeviceNames(table):
-                device_list = list()
+            def getUUIDs(table, uuid_key):
+                uuid_list = list()
                 if table["Count"] > 0:
                     deserializer = TypeDeserializer()
                     for record in table["Items"]:
                         for record_key, record_value in record.items():
-                            if record_key == 'Device_UUID':
-                                device_name = deserializer.deserialize(record_value)
-                                device_list.append(device_name)      
-                return device_list
+                            if record_key == uuid_key:
+                                uuid = deserializer.deserialize(record_value)
+                                uuid_list.append(uuid)      
+                return uuid_list
+              
               
             # Convert the decimal items retrieved from the dynamodb table into floats
 
             # Return the db structure converted
 
-            def convertDBinfo(db_data): #parse alerts info
+            def convertDBinfo(db_data): #parse info
                 conv_data = dict()
                 if db_data["Count"] > 0:
                     for record in db_data["Items"]:
@@ -431,17 +436,21 @@ Resources:
 
             # Return the structured data dictionary
 
-            def parseDBinfo(db_data):
+            def parseDBinfo(db_data, uuid_key, time_key, divide_by_1000):
                 conv_data = convertDBinfo(db_data)
                 data = dict()
                 if db_data["Count"] > 0:
                     aux = list()
-                    device_name = conv_data[0]["Device_UUID"]
+                    uuid = conv_data[0][uuid_key]
                     for record in conv_data:
-                        del record["Device_UUID"]
-                        record['Timestamp'] = str((datetime.fromtimestamp(record["Timestamp"]/1000)).isoformat()) #adjust to create a Key with datetime (need to /1000 because it was stored in ms)
-                        aux.append(record) 
-                    data["name"] = device_name
+                        del record[uuid_key]
+                        if time_key in record:
+                            timestamp = record[time_key]
+                            if divide_by_1000:
+                                timestamp /= 1000
+                            record[time_key] = str((datetime.fromtimestamp(timestamp)).isoformat())
+                        aux.append(record)
+                    data["name"] = uuid
                     data["data"] = aux
                 return data
 
@@ -458,18 +467,30 @@ Resources:
                         'Access-Control-Allow-Origin': '*'
                     },
                 }
-                alerts_table = resource.Table(alerts_table_name)
+
+                table_name = alerts_table_name
+                uuid_key = 'Device_UUID'
+                time_key = 'Timestamp'
+                divide_by_1000 = True
+
+                if devices_resource in event['resource']:
+                    table_name = devices_table_name
+                    uuid_key = 'Device_UUID'
+                    time_key = 'Last_Updated'
+                    divide_by_1000 = False
+
+                table = resource.Table(table_name)
                 
-                if (event['resource'] == bins_id_resource):
-                    devExist = alerts_table.query(
-                            KeyConditionExpression = Key('Device_UUID').eq(event['pathParameters']['id']),
+                if event['resource'] == alerts_id_resource or event['resource'] == devices_id_resource:
+                    devExist = table.query(
+                            KeyConditionExpression = Key(uuid_key).eq(event['pathParameters']['id']),
                             Limit = 1,
                             ScanIndexForward = False
                         )
                         
-                    if devExist["Count"] == 0: #if the device doesnt exist
+                    if devExist["Count"] == 0: # if the object doesnt exist
                         response['statusCode'] = 404
-                        response['body'] = json.dumps({"Error": "Device does not exist!"})
+                        response['body'] = json.dumps({"Error": "Object does not exist!"})
                         return response
                         
                     if event['queryStringParameters'] != None:
@@ -516,24 +537,23 @@ Resources:
                         start = Decimal(datetime.timestamp(datetime.now()) - timedelta(days = 5).total_seconds())*1000 #get last 5 days data
                         end = Decimal(datetime.timestamp(datetime.now()))*1000 #get actual time
                         
-                    dynamo_data = alerts_table.query(
-                        KeyConditionExpression =  Key('Device_UUID').eq(event['pathParameters']['id']) & Key('Timestamp').between(start, end)
+                    dynamo_data = table.query(
+                        KeyConditionExpression =  Key(uuid_key).eq(event['pathParameters']['id']) & Key(time_key).between(start, end)
                         )
                     data = parseDBinfo(dynamo_data)
                     
-                elif event['resource'] == bins_resource:
-                    devices = client.scan(
-                        TableName = devices_table_name)
+                elif event['resource'] == alerts_resource or event['resource'] == devices_resource:
+                    uuids = client.scan(
+                        TableName = table_name)
                     
-                    device_list = getDeviceNames(devices)
+                    uuid_list = getUUIDs(uuids, uuid_key)
                     data = list()
-                    for i in range(len(device_list)):
-                        dynamo_data = alerts_table.query(
-                            KeyConditionExpression = Key('Device_UUID').eq(device_list[i]),
-                            Limit = 1,
+                    for i in range(len(uuid_list)):
+                        dynamo_data = table.query(
+                            KeyConditionExpression = Key(uuid_key).eq(uuid_list[i]),
                             ScanIndexForward = False
                         )
-                        data.append(parseDBinfo(dynamo_data))
+                        data.append(parseDBinfo(dynamo_data, uuid_key, time_key, divide_by_1000))
                         data[i]["data"] = data[i]["data"][0]
                 else:
                     response['statusCode'] = 404
@@ -553,7 +573,7 @@ Resources:
       - DevicesTable
       - AlertsTable
       - AWSProjectRole
-    Description: IoT Bins Project Function
+    Description: IoT Devices Project Function
     Metadata:
       "AWS::CloudFormation::Designer":
         id: e59fd3fb-e51c-4f06-9852-2956e6cf8b8d
@@ -662,7 +682,7 @@ Resources:
       - DevicesTable
       - AlertsTable
       - AWSProjectRole
-    Description: IoT Bins Project Function
+    Description: IoT Devices Project Function
   RestAPIGateway:
     Type: "AWS::ApiGateway::RestApi"
     Properties:
@@ -674,35 +694,35 @@ Resources:
     Metadata:
       "AWS::CloudFormation::Designer":
         id: df5e5b05-ba2a-498b-ad58-50036cc7d4fa
-  APIBinsResource:
+  APIDevicesResource:
     Type: "AWS::ApiGateway::Resource"
     Properties:
       RestApiId: !Ref RestAPIGateway
       ParentId: !GetAtt
         - RestAPIGateway
         - RootResourceId
-      PathPart: bins
+      PathPart: devices
     DependsOn: RestAPIGateway
     Metadata:
       "AWS::CloudFormation::Designer":
         id: 38593e62-bed4-43dd-b10b-fe12d4e5211f
-  APIIDResource:
+  APIDevicesIDResource:
     Type: "AWS::ApiGateway::Resource"
     Properties:
       RestApiId: !Ref RestAPIGateway
-      ParentId: !Ref APIBinsResource
+      ParentId: !Ref APIDevicesResource
       PathPart: "{id}"
     DependsOn:
       - RestAPIGateway
-      - APIBinsResource
+      - APIDevicesResource
     Metadata:
       "AWS::CloudFormation::Designer":
         id: a425bf66-cc08-41a3-89a4-a89ac6078805
-  GetBinsMethod:
+  GetDevicesMethod:
     Type: "AWS::ApiGateway::Method"
     Properties:
       RestApiId: !Ref RestAPIGateway
-      ResourceId: !Ref APIBinsResource
+      ResourceId: !Ref APIDevicesResource
       HttpMethod: GET
       AuthorizationType: NONE
       Integration:
@@ -722,17 +742,17 @@ Resources:
           ResponseModels:
             application/json: Empty
     DependsOn:
-      - APIBinsResource
+      - APIDevicesResource
       - RestAPIGateway
       - APILambdaFunction
     Metadata:
       "AWS::CloudFormation::Designer":
         id: 62cb25b2-15ae-4e68-9d02-f92e0a0f47d1
-  GetIDMethod:
+  GetDevicesIDMethod:
     Type: "AWS::ApiGateway::Method"
     Properties:
       RestApiId: !Ref RestAPIGateway
-      ResourceId: !Ref APIIDResource
+      ResourceId: !Ref APIDevicesIDResource
       HttpMethod: GET
       AuthorizationType: NONE
       Integration:
@@ -752,24 +772,98 @@ Resources:
           ResponseModels:
             application/json: Empty
     DependsOn:
-      - APIIDResource
+      - APIDevicesIDResource
       - RestAPIGateway
       - APILambdaFunction
     Metadata:
       "AWS::CloudFormation::Designer":
         id: 71b6609e-e0d9-4d2b-8440-6f71404308b7
+  APIAlertsResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId: !Ref RestAPIGateway
+      ParentId: !GetAtt
+        - RestAPIGateway
+        - RootResourceId
+      PathPart: alerts
+    DependsOn: RestAPIGateway
+  APIAlertsIDResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId: !Ref RestAPIGateway
+      ParentId: !Ref APIAlertsResource
+      PathPart: "{id}"
+    DependsOn:
+      - RestAPIGateway
+      - APIAlertsResource
+  GetAlertsMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref RestAPIGateway
+      ResourceId: !Ref APIAlertsResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - >-
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt APILambdaFunction.Arn
+        IntegrationResponses:
+          - ResponseTemplates:
+              application/json: ""
+            StatusCode: 200
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: Empty
+    DependsOn:
+      - APIAlertsResource
+      - RestAPIGateway
+      - APILambdaFunction
+  GetAlertsIDMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref RestAPIGateway
+      ResourceId: !Ref APIAlertsIDResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - >-
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt APILambdaFunction.Arn
+        IntegrationResponses:
+          - ResponseTemplates:
+              application/json: ""
+            StatusCode: 200
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: Empty
+    DependsOn:
+      - APIAlertsIDResource
+      - RestAPIGateway
+      - APILambdaFunction
   RestAPIDeployment:
     Type: "AWS::ApiGateway::Deployment"
     Properties:
       RestApiId: !Ref RestAPIGateway
       Description: Deployed Rest API
     DependsOn:
-      - GetBinsMethod
-      - GetIDMethod
+      - GetDevicesMethod
+      - GetDevicesIDMethod
+      - GetAlertsMethod
+      - GetAlertsIDMethod
     Metadata:
       "AWS::CloudFormation::Designer":
         id: a581fe12-e629-4039-9789-d22b73484078
-  APILambdaBinsPermission:
+  APILambdaDevicesPermission:
     Type: "AWS::Lambda::Permission"
     Properties:
       FunctionName: !Ref APILambdaFunctionName
@@ -777,14 +871,14 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceAccount: !Ref "AWS::AccountId"
       SourceArn: !Sub >-
-        arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPIGateway}/*/GET/bins
+        arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPIGateway}/*/GET/devices
     DependsOn:
-      - APIBinsResource
+      - APIDevicesResource
       - APILambdaFunction
     Metadata:
       "AWS::CloudFormation::Designer":
         id: 45dd3940-671c-43fb-90fe-7928aeda517a
-  APILambdaIdPermission:
+  APILambdaDevicesIdPermission:
     Type: "AWS::Lambda::Permission"
     Properties:
       FunctionName: !Ref APILambdaFunctionName
@@ -792,23 +886,51 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceAccount: !Ref "AWS::AccountId"
       SourceArn: !Sub >-
-        arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPIGateway}/*/GET/bins/{id}
+        arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPIGateway}/*/GET/devices/{id}
     DependsOn:
-      - APIBinsResource
+      - APIDevicesResource
       - APILambdaFunction
     Metadata:
       "AWS::CloudFormation::Designer":
         id: cc7f8a25-9616-4e1d-941a-9536365b2e46
+  APILambdaAlertsPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref APILambdaFunctionName
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Ref "AWS::AccountId"
+      SourceArn: !Sub >-
+        arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPIGateway}/*/GET/alerts
+    DependsOn:
+      - APIAlertsResource
+      - APILambdaFunction
+  APILambdaAlertsIdPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref APILambdaFunctionName
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Ref "AWS::AccountId"
+      SourceArn: !Sub >-
+        arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPIGateway}/*/GET/alerts/{id}
+    DependsOn:
+      - APIAlertsResource
+      - APILambdaFunction
   RestAPIStage:
     Type: "AWS::ApiGateway::Stage"
     Properties:
-      StageName: demo
+      StageName: api
       RestApiId: !Ref RestAPIGateway
       DeploymentId: !Ref RestAPIDeployment
       MethodSettings:
-        - ResourcePath: /bins
+        - ResourcePath: /devices
           HttpMethod: GET
-        - ResourcePath: "/bins/{id}"
+        - ResourcePath: "/devices/{id}"
+          HttpMethod: GET
+        - ResourcePath: /alerts
+          HttpMethod: GET
+        - ResourcePath: "/alerts/{id}"
           HttpMethod: GET
     DependsOn:
       - RestAPIDeployment
@@ -970,18 +1092,30 @@ Outputs:
   RestAPIGateway:
     Description: API Root ID
     Value: !GetAtt RestAPIGateway.RootResourceId
-  APIBinsResource:
+  APIDevicesResource:
     Description: Resource to get all the devices
-    Value: !Ref APIBinsResource
-  APIIDResource:
+    Value: !Ref APIDevicesResource
+  APIDevicesIDResource:
     Description: ID Resource for specific device
-    Value: !Ref APIIDResource
-  GetBinsMethod:
-    Description: Get Method to be executed when the APIBinsResource is triggered
-    Value: !Ref APIBinsResource
-  GetIDMethod:
+    Value: !Ref APIDevicesIDResource
+  GetDevicesMethod:
+    Description: Get Method to be executed when the APIDevicesResource is triggered
+    Value: !Ref APIDevicesResource
+  GetDevicesIDMethod:
     Description: Get Method to be executed when the APIResource is triggered
-    Value: !Ref GetIDMethod
+    Value: !Ref GetDevicesIDMethod
+  APIAlertsResource:
+    Description: Resource to get all the Alerts
+    Value: !Ref APIAlertsResource
+  APIAlertsIDResource:
+    Description: ID Resource for specificAlerts
+    Value: !Ref APIAlertsIDResource
+  GetAlertsMethod:
+    Description: Get Method to be executed when the APIAlertsResource is triggered
+    Value: !Ref APIAlertsResource
+  GetAlertsIDMethod:
+    Description: Get Method to be executed when the APIResource is triggered
+    Value: !Ref GetAlertsIDMethod
   RestAPIDeployment:
     Description: Deploy API created
     Value: !Ref RestAPIDeployment
