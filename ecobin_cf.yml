@@ -407,15 +407,15 @@ Resources:
             # Return the list of UUIDs
 
             def getUUIDs(table, uuid_key):
-                uuid_list = list()
+                uuid_set = set()
                 if table["Count"] > 0:
                     deserializer = TypeDeserializer()
                     for record in table["Items"]:
                         for record_key, record_value in record.items():
                             if record_key == uuid_key:
                                 uuid = deserializer.deserialize(record_value)
-                                uuid_list.append(uuid)      
-                return uuid_list
+                                uuid_set.add(uuid)
+                return list(uuid_set)
               
               
             # Convert the decimal items retrieved from the dynamodb table into floats
@@ -431,28 +431,6 @@ Resources:
                                 record[record_key] = float(record_value)
                     conv_data = db_data["Items"]
                 return conv_data
-                
-            # Parse the dynamodb data to a structured dictionary
-
-            # Return the structured data dictionary
-
-            def parseDBinfo(db_data, uuid_key, time_key, divide_by_1000):
-                conv_data = convertDBinfo(db_data)
-                data = dict()
-                if db_data["Count"] > 0:
-                    aux = list()
-                    uuid = conv_data[0][uuid_key]
-                    for record in conv_data:
-                        del record[uuid_key]
-                        if time_key in record:
-                            timestamp = record[time_key]
-                            if divide_by_1000:
-                                timestamp /= 1000
-                            record[time_key] = str((datetime.fromtimestamp(timestamp)).isoformat())
-                        aux.append(record)
-                    data["name"] = uuid
-                    data["data"] = aux
-                return data
 
             #Handle the different requests, routed through the API Gateway
 
@@ -471,13 +449,11 @@ Resources:
                 table_name = alerts_table_name
                 uuid_key = 'Device_UUID'
                 time_key = 'Timestamp'
-                divide_by_1000 = True
 
                 if devices_resource in event['resource']:
                     table_name = devices_table_name
                     uuid_key = 'Device_UUID'
                     time_key = 'Last_Updated'
-                    divide_by_1000 = False
 
                 table = resource.Table(table_name)
                 
@@ -540,12 +516,11 @@ Resources:
                     dynamo_data = table.query(
                         KeyConditionExpression =  Key(uuid_key).eq(event['pathParameters']['id']) & Key(time_key).between(start, end)
                         )
-                    data = parseDBinfo(dynamo_data)
+                    data = convertDBinfo(dynamo_data)
                     
                 elif event['resource'] == alerts_resource or event['resource'] == devices_resource:
-                    uuids = client.scan(
-                        TableName = table_name)
-                    
+                    uuids = client.scan(TableName=table_name)
+
                     uuid_list = getUUIDs(uuids, uuid_key)
                     data = list()
                     for i in range(len(uuid_list)):
@@ -553,8 +528,8 @@ Resources:
                             KeyConditionExpression = Key(uuid_key).eq(uuid_list[i]),
                             ScanIndexForward = False
                         )
-                        data.append(parseDBinfo(dynamo_data, uuid_key, time_key, divide_by_1000))
-                        data[i]["data"] = data[i]["data"][0]
+                        data.append(convertDBinfo(dynamo_data))
+                    data = data[0]
                 else:
                     response['statusCode'] = 404
                     response['body'] = json.dumps({"Error": "Resource not found!"})
