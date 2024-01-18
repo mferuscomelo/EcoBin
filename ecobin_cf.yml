@@ -575,6 +575,8 @@ Resources:
 
             from datetime import datetime
 
+            from decimal import Decimal
+
 
             devices_table_name = os.environ["DevicesTable"]
 
@@ -606,6 +608,9 @@ Resources:
                     return device
 
                 def update_field(self, device_uuid, field_name, field_value):
+                    if isinstance(field_value, float):
+                        field_value = Decimal(str(field_value))
+                        
                     self.table.update_item(
                         Key={'Device_UUID': device_uuid},
                         UpdateExpression=f"set {field_name} = :v, Last_Updated=:lu",
