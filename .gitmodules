@@ -1,6 +1,6 @@
 [submodule "EcoBin-WebApp"]
 	path = EcoBin-WebApp
-	url = https://github.com/mferuscomelo/EcoBin-WebApp
-[submodule "EcoBin-ESP32Cam"]
-	path = EcoBin-ESP32Cam
-	url = https://github.com/mferuscomelo/EcoBin-ESP32Cam.git
+	url = https://github.com/mferuscomelo/EcoBin-WebApp.git
+[submodule "EcoBin-AVR"]
+	path = EcoBin-AVR
+	url = https://github.com/mferuscomelo/EcoBin-AVR.git
