@@ -452,7 +452,6 @@ Resources:
 
                 if devices_resource in event['resource']:
                     table_name = devices_table_name
-                    uuid_key = 'Device_UUID'
                     time_key = 'Last_Updated'
 
                 table = resource.Table(table_name)
@@ -528,8 +527,7 @@ Resources:
                             KeyConditionExpression = Key(uuid_key).eq(uuid_list[i]),
                             ScanIndexForward = False
                         )
-                        data.append(convertDBinfo(dynamo_data))
-                    data = data[0]
+                        data.append(convertDBinfo(dynamo_data)[0])
                 else:
                     response['statusCode'] = 404
                     response['body'] = json.dumps({"Error": "Resource not found!"})
