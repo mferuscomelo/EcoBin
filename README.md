@@ -179,6 +179,8 @@ GitHub Repo: <https://github.com/mferuscomelo/EcoBin/blob/main/ecobin_cf.yml>
 
 ## Costs
 
+In an effort to be completely transparent about the costs, here’s a breakdown of each of the hardware components:
+
 | Name                                                                       |        Costs ($) |
 | :------------------------------------------------------------------------- | ---------------: |
 | AVR IoT Cellular Mini                                                      | FREE (Sponsored) |
@@ -191,6 +193,8 @@ GitHub Repo: <https://github.com/mferuscomelo/EcoBin/blob/main/ecobin_cf.yml>
 | [BQ24074 USB / DC / Solar charger](https://www.adafruit.com/product/4755)  |            14.95 |
 | Misc. (wires, tools, etc.)                                                 |            27.38 |
 | Total                                                                      |           142.03 |
+
+Of course, the costs listed above don’t include the 100+ hours of R&D spent developing this project.
 
 ## End Result
 
