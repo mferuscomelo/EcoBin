@@ -55,7 +55,7 @@ The modular nature of EcoBin's design, combined with the power of AWS, has resul
 
 ### The Cloud - Amazon Web Services (AWS)
 
-Using AWS CloudFormation allows the creation of a service stack, generating the necessary infrastructure and resources for each service through a template. This template enabled repeatable and consistent deployments across multiple environments which accelerated the development cycle. This AWS Stack comprises of the following resources:
+Using AWS CloudFormation allows the creation of a service stack, generating the necessary infrastructure and resources for each service through a [template](/ecobin_cf.yml). This template enabled repeatable and consistent deployments across multiple environments which accelerated the development cycle. This AWS Stack comprises of the following resources:
 
 - **IoT Core**  
    This service acts as the central hub for all EcoBin devices deployed throughout the city. It securely connects each bin to the cloud, facilitating real-time data exchange and enabling remote management of the bins' smart features.
